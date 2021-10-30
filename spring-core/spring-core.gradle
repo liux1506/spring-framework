@@ -54,6 +54,7 @@ dependencies {
 	optional("io.reactivex.rxjava2:rxjava")
 	optional("io.netty:netty-buffer")
 	testCompile(project(":kotlin-coroutines"))
+	implementation(project(":kotlin-coroutines"))
 	testCompile("javax.annotation:javax.annotation-api")
 	testCompile("javax.xml.bind:jaxb-api")
 	testCompile("com.google.code.findbugs:jsr305")
