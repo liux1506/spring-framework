@@ -63,15 +63,19 @@ final class PostProcessorRegistrationDelegate {
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
-
+			// 循环手动set的beanFactoryPostProcessors的BeanDefinitionRegistryPostProcessor
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
+					/**
+					 * @see BeanDefinitionRegistryPostProcessor#postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)
+					 * 执行子类实现BeanDefinitionRegistryPostProcessor的方法
+					 */
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
-				}
-				else {
+				} else {
+					// 未实现BeanDefinitionRegistryPostProcessor的常规后置处理器添加至regularPostProcessors list中
 					regularPostProcessors.add(postProcessor);
 				}
 			}
@@ -80,36 +84,56 @@ final class PostProcessorRegistrationDelegate {
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
+			/**
+			 * 临时数组
+			 * 以下代码会检查BeanDefinitionRegistryPostProcessor的实现类是否实现PriorityOrdered或Ordered接口来决定执行顺序
+			 * @see PriorityOrdered#getOrder()
+			 * @see Ordered#getOrder()
+			 */
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
+			// ConfigurationClassPostProcessor.class implements BeanDefinitionRegistryPostProcessor.class
+			// 获取到ConfigurationClassPostProcessor
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
+				// 实现PriorityOrdered的接口优先加到集合
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+					// getBean
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
 				}
 			}
+			/**
+			 * @see Ordered#getOrder() 排序
+			 */
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
+			// 合并
 			registryProcessors.addAll(currentRegistryProcessors);
+			// 调用实现了PriorityOrdered 接口 BeanDefinitionRegistryPostProcessor后置处理器
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
+				// processedBeans 中不含 && 实现了接口Ordered 放入集合
 				if (!processedBeans.contains(ppName) && beanFactory.isTypeMatch(ppName, Ordered.class)) {
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					processedBeans.add(ppName);
 				}
 			}
+			// 排序
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
+			// 合并
 			registryProcessors.addAll(currentRegistryProcessors);
+			// 调用实现了PriorityOrdered 接口 BeanDefinitionRegistryPostProcessor后置处理器
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
+			// 调用剩余所有BeanDefinitionRegistryPostProcessors
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
@@ -128,40 +152,53 @@ final class PostProcessorRegistrationDelegate {
 			}
 
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
+			// 调用BeanDefinitionRegistryPostProcessor的bean工厂后置处理器
 			invokeBeanFactoryPostProcessors(registryProcessors, beanFactory);
+			// 调用非BeanDefinitionRegistryPostProcessor的bean工厂后置处理器
 			invokeBeanFactoryPostProcessors(regularPostProcessors, beanFactory);
-		}
-
-		else {
+		} else {
 			// Invoke factory processors registered with the context instance.
 			invokeBeanFactoryPostProcessors(beanFactoryPostProcessors, beanFactory);
 		}
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
+		// 调用所有实现BeanFactoryPostProcessor接口的bean工厂后置处理器
 		String[] postProcessorNames =
 				beanFactory.getBeanNamesForType(BeanFactoryPostProcessor.class, true, false);
 
 		// Separate between BeanFactoryPostProcessors that implement PriorityOrdered,
 		// Ordered, and the rest.
+		// 实现PriorityOrdered的集合
 		List<BeanFactoryPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
+		// 实现Ordered的集合
 		List<String> orderedPostProcessorNames = new ArrayList<>();
+		// 其他的集合
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
 		for (String ppName : postProcessorNames) {
 			if (processedBeans.contains(ppName)) {
+				// 已调用过 跳过
 				// skip - already processed in first phase above
 			}
-			else if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+			/**
+			 * 这里最优先队列先getBean是需要最先实例化优先Bean
+			 * 1. priorityOrderedPostProcessors放入BeanFactoryPostProcessor（从bean工厂创建或获取bean）
+			 * 2. orderedPostProcessorNames 放入 postProcessorName
+			 * 3. nonOrderedPostProcessorNames 放入 postProcessorName
+			 */
+			else if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) { // 1
 				priorityOrderedPostProcessors.add(beanFactory.getBean(ppName, BeanFactoryPostProcessor.class));
 			}
-			else if (beanFactory.isTypeMatch(ppName, Ordered.class)) {
+			else if (beanFactory.isTypeMatch(ppName, Ordered.class)) { // 2
 				orderedPostProcessorNames.add(ppName);
 			}
-			else {
+			else { // 3
 				nonOrderedPostProcessorNames.add(ppName);
 			}
 		}
-
+		/**
+		 * 调用invokeBeanFactoryPostProcessors
+		 */
 		// First, invoke the BeanFactoryPostProcessors that implement PriorityOrdered.
 		sortPostProcessors(priorityOrderedPostProcessors, beanFactory);
 		invokeBeanFactoryPostProcessors(priorityOrderedPostProcessors, beanFactory);
@@ -180,7 +217,7 @@ final class PostProcessorRegistrationDelegate {
 			nonOrderedPostProcessors.add(beanFactory.getBean(postProcessorName, BeanFactoryPostProcessor.class));
 		}
 		invokeBeanFactoryPostProcessors(nonOrderedPostProcessors, beanFactory);
-
+		/******************************************************************************************/
 		// Clear cached merged bean definitions since the post-processors might have
 		// modified the original metadata, e.g. replacing placeholders in values...
 		beanFactory.clearMetadataCache();
@@ -261,9 +298,11 @@ final class PostProcessorRegistrationDelegate {
 			return;
 		}
 		Comparator<Object> comparatorToUse = null;
+		// DefaultListableBeanFactory 使用自身依赖比较器
 		if (beanFactory instanceof DefaultListableBeanFactory) {
 			comparatorToUse = ((DefaultListableBeanFactory) beanFactory).getDependencyComparator();
 		}
+		// 如果没有默认比较器 new OrderComparator
 		if (comparatorToUse == null) {
 			comparatorToUse = OrderComparator.INSTANCE;
 		}
@@ -275,7 +314,11 @@ final class PostProcessorRegistrationDelegate {
 	 */
 	private static void invokeBeanDefinitionRegistryPostProcessors(
 			Collection<? extends BeanDefinitionRegistryPostProcessor> postProcessors, BeanDefinitionRegistry registry) {
-
+		/**
+		 * 循环调用实现类postProcessBeanDefinitionRegistry方法
+		 * @see org.springframework.context.annotation.ConfigurationClassPostProcessor#postProcessBeanDefinitionRegistry(BeanDefinitionRegistry)
+		 * registry: {@link DefaultListableBeanFactory}
+		 */
 		for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessBeanDefinitionRegistry(registry);
 		}

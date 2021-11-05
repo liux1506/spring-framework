@@ -228,6 +228,9 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	}
 
 	/**
+	 * get Bean ,
+	 * 如果已经初始化则直接获取
+	 * 未初始化则创建Bean然后返回
 	 * Return an instance, which may be shared or independent, of the specified bean.
 	 * @param name the name of the bean to retrieve
 	 * @param requiredType the required type of the bean to retrieve
