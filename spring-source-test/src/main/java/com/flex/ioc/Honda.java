@@ -1,17 +1,17 @@
-package com.flex.bean;
+package com.flex.ioc;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Car {
+public class Honda {
 	private String name;
 	@Autowired
-	private Honda honda;
+	private Car car;
 
-	public Car() {
-		System.out.println("init Car");
-	}
+//	public Honda() {
+//		System.out.println("init Honda");;
+//	}
 
 	public String getName() {
 		return name;
@@ -21,11 +21,11 @@ public class Car {
 		this.name = name;
 	}
 
-	public Honda getHonda() {
-		return honda;
+	public Car getCar() {
+		return car;
 	}
 
-	public void setHonda(Honda honda) {
-		this.honda = honda;
+	public void setCar(Car car) {
+		this.car = car;
 	}
 }

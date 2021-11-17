@@ -194,7 +194,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					// Consistent creation of early reference within full singleton lock
 					/**
 					 * 从新从一级缓存中拿， 这里用到了double checked locking（双重检查锁）
-					 * todo 此锁和另外一个锁合作使用，回填此注释
+					 *
 					 */
 					singletonObject = this.singletonObjects.get(beanName);
 					if (singletonObject == null) {
@@ -244,7 +244,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (logger.isDebugEnabled()) {
 					logger.debug("Creating shared instance of singleton bean '" + beanName + "'");
 				}
-				// 单例Bean创建前检查（是否排除创建前检查 && 是否已经正在创建）
+				// 单例Bean创建前检查（是否排除创建前检查 && 是否已经正在创建） 并标记为正在创建
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);

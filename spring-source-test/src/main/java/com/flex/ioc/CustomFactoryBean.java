@@ -1,4 +1,4 @@
-package com.flex.bean;
+package com.flex.ioc;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.stereotype.Component;

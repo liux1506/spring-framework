@@ -1,4 +1,4 @@
-package com.flex.config;
+package com.flex.ioc;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -19,12 +19,12 @@ public class MyBeanDefinitionRegistryPostProcessor implements BeanDefinitionRegi
 	@Override
 	public void postProcessBeanFactory(
 			ConfigurableListableBeanFactory beanFactory) throws BeansException {
-		System.out.println("post process bean factory");
+//		System.out.println("post process bean factory");
 	}
 
 	@Override
 	public void postProcessBeanDefinitionRegistry(
 			BeanDefinitionRegistry registry) throws BeansException {
-		System.out.println("post process bean definition registry");
+//		System.out.println("post process bean definition registry");
 	}
 }
